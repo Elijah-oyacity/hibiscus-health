@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth.js v5 Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// E-commerce Models
+model Product {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String    @db.Text
+  longDescription String?   @db.Text // For more detailed info
+  benefits        String?   @db.Text // Bullet points or paragraphs
+  ingredients     String?   @db.Text // Could be JSON for structured data
+  dosage          String?
+  price           Int       // Store in cents to avoid floating point issues
+  stockQuantity   Int
+  imageUrl        String?   // Main image URL (e.g., Adobe Stock link)
+  imageAdobeId    String?   // Adobe Stock Photo ID for purchase link
+  images          Json?     // Array of additional image URLs or Adobe IDs
+  stripePriceId   String?   @unique // Stripe Price ID
+  stripeProductId String?   @unique // Stripe Product ID
+  isFeatured      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  orderItems OrderItem[]
+  // categoryId String?
+  // category   Category? @relation(fields: [categoryId], references: [id])
+}
+
+// model Category {
+//   id        String    @id @default(cuid())
+//   name      String    @unique
+//   slug      String    @unique
+//   products  Product[]
+// }
+
+model Order {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id])
+  totalAmount           Int         // Store in cents
+  status                OrderStatus @default(PENDING)
+  stripePaymentIntentId String?     @unique
+  shippingAddress       Json?       // { name, street, city, state, zip, country }
+  billingAddress        Json?       // Optional
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id]) // Consider what happens if product is deleted
+  quantity  Int
+  price     Int     // Price in cents at the time of purchase
+
+  @@unique([orderId, productId]) // Typically a user buys a product once per order, quantity handles multiple
+}
+
+model SubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String
+  description   String
+  price         Int      // Store in cents
+  interval      String   // e.g. "month", "quarter", "year"
+  stripePriceId String   @unique
+  productId     String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING     // Order created, awaiting payment
+  PROCESSING  // Payment received, order being processed
+  SHIPPED
+  DELIVERED
+  CANCELED
+  FAILED      // Payment failed
+}
