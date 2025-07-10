@@ -46,7 +46,64 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Create checkout session
+    // Verify the Stripe price exists before creating checkout session
+    try {
+      await stripe.prices.retrieve(plan.stripePriceId);
+    } catch (priceError) {
+      console.error("[API] Stripe price not found:", plan.stripePriceId);
+      
+      // Instead of using the invalid price ID, we can create a new price for this plan
+      try {
+        // First, create or get a product
+        const product = await stripe.products.create({
+          name: plan.name,
+          description: plan.description,
+        });
+
+        // Then create a price for that product
+        // Convert our plan interval to Stripe's supported intervals (month, year, week, day)
+        let stripeInterval: 'month' | 'year' | 'week' | 'day' = 'month';
+        let intervalCount = 1;
+        
+        if (plan.interval === 'quarter') {
+          stripeInterval = 'month';
+          intervalCount = 3;
+        } else if (plan.interval === 'month' || plan.interval === 'year') {
+          stripeInterval = plan.interval as 'month' | 'year';
+        }
+        
+        const price = await stripe.prices.create({
+          unit_amount: plan.price,
+          currency: 'usd',
+          recurring: {
+            interval: stripeInterval,
+            interval_count: intervalCount,
+          },
+          product: product.id,
+        });
+
+        // Update the plan in the database with the new stripe price ID
+        await db.subscriptionPlan.update({
+          where: { id: plan.id },
+          data: {
+            stripePriceId: price.id,
+            productId: product.id,
+          }
+        });
+
+        // Update our local plan object with the new price ID
+        plan.stripePriceId = price.id;
+        
+        console.log(`[API] Created new Stripe price: ${price.id} for plan: ${plan.id}`);
+      } catch (createPriceError) {
+        console.error("[API] Failed to create new Stripe price:", createPriceError);
+        return NextResponse.json({ 
+          error: "Invalid price configuration in subscription plan. Please contact support." 
+        }, { status: 500 });
+      }
+    }
+    
+    // Create checkout session with verified or newly created price
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       billing_address_collection: "auto",
@@ -70,7 +127,10 @@ export async function POST(req: Request) {
     })
 
     console.log("[API] Checkout session created:", checkoutSession.id)
-    return NextResponse.json({ sessionId: checkoutSession.id })
+    return NextResponse.json({ 
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url  // Include the URL to redirect the user
+    })
   } catch (error) {
     console.error("[API] Error creating checkout session:", error)
     return NextResponse.json(

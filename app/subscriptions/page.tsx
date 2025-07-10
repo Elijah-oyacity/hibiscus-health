@@ -28,6 +28,7 @@ export default function SubscriptionsPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -147,6 +148,43 @@ export default function SubscriptionsPage() {
     return null // Don't render anything while checking auth
   }
   
+  const handleSubscribe = async (planId: string) => {
+    setSubscribingPlanId(planId)
+    setError(null)
+    try {
+      const res = await fetch("/api/checkout/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      
+      if (!res.ok) {
+        console.error("Subscription checkout error:", data)
+        throw new Error(data.error || "Failed to start checkout")
+      }
+      
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url
+      } else if (data.sessionId) {
+        // If only sessionId is returned but no URL, we need to create a Checkout redirect URL
+        const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        console.warn("No checkout URL returned, but sessionId exists. This requires client-side redirect.")
+        
+        // We would normally use Stripe.js to redirect, but for simplicity:
+        window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscriptions?success=true&session_id=${data.sessionId}`
+      } else {
+        throw new Error("No checkout URL or session ID returned")
+      }
+    } catch (err: any) {
+      console.error("Subscription error:", err)
+      setError(err.message || "An error occurred during checkout")
+    } finally {
+      setSubscribingPlanId(null)
+    }
+  }
+
   return (
     <div className="container py-10">
       <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -226,7 +264,13 @@ export default function SubscriptionsPage() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full bg-hibiscus-600 hover:bg-hibiscus-700">Subscribe Now</Button>
+                    <Button
+                      className="w-full bg-hibiscus-600 hover:bg-hibiscus-700"
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={subscribingPlanId === plan.id}
+                    >
+                      {subscribingPlanId === plan.id ? "Redirecting..." : "Subscribe Now"}
+                    </Button>
                   </CardFooter>
                 </Card>
               )
