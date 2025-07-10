@@ -50,7 +50,7 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
           </svg>
         )}
         Continue with Google
-      </Button>
+          </Button>
     </div>
   )
 }

@@ -19,14 +19,14 @@ const initialCartItems = [
     name: "Hibiscus Tablets (30 count)",
     price: 29.99,
     quantity: 1,
-    image: "/placeholder-aek36.png",
+    image: "https://res.cloudinary.com/elijjaaahhhh/image/upload/v1747395956/kmusmgvtnomcjs2rn6ib.png",
   },
   {
     id: "PROD003",
     name: "Hibiscus Extract (2oz)",
     price: 34.99,
     quantity: 1,
-    image: "/placeholder-b0dgo.png",
+    image: "https://res.cloudinary.com/elijjaaahhhh/image/upload/v1747395956/kmusmgvtnomcjs2rn6ib.png",
   },
 ]
 
@@ -89,7 +89,19 @@ export default function CartPage() {
         }),
       })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("Checkout API error:", errorData)
+        return
+      }
+
       const { sessionId } = await response.json()
+      
+      if (!sessionId) {
+        console.error("No session ID returned from checkout API")
+        return
+      }
+
       const stripe = await stripePromise
 
       if (stripe) {

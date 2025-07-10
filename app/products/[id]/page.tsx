@@ -119,10 +119,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               <ShoppingCart className="mr-2 h-4 w-4" />
               Add to Cart
             </Button>
-            <Button variant="outline" className="w-full">
+            {/* <Button variant="outline" className="w-full">
               <Heart className="mr-2 h-4 w-4" />
               Add to Wishlist
-            </Button>
+            </Button> */}
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="h-4 w-4 text-green-500" />
