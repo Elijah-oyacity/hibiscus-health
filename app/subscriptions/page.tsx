@@ -1,9 +1,17 @@
+import { redirect } from "next/navigation"
+import { getServerSession } from "next-auth"
 import { Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function SubscriptionsPage() {
+export default async function SubscriptionsPage() {
+  const session = await getServerSession()
+
+  if (!session?.user) {
+    redirect("/login")
+  }
+
   return (
     <div className="container py-10">
       <div className="flex flex-col items-center justify-center space-y-4 text-center">

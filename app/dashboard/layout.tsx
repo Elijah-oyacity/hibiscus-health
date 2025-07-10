@@ -2,7 +2,7 @@ import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import Link from "next/link"
-import { CreditCard, Home, Package, Settings, User } from "lucide-react"
+import { CreditCard, Home, Package, Settings, User, ShoppingBag } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -29,6 +29,10 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
           <Link href="/dashboard/orders" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
             <Package className="mr-2 h-4 w-4" />
             Orders
+          </Link>
+          <Link href="/dashboard/products" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Products
           </Link>
           <Link href="/dashboard/subscriptions" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
             <CreditCard className="mr-2 h-4 w-4" />

@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { CheckCircle } from "lucide-react"
@@ -9,12 +11,20 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function CheckoutSuccessPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const [orderDetails, setOrderDetails] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (status === "loading") return
+    if (!session) {
+      router.push("/login")
+      return
+    }
+
     if (sessionId) {
       // In a real app, you would fetch the order details from your API
       // For now, we'll simulate it with a timeout
@@ -41,7 +51,29 @@ export default function CheckoutSuccessPage() {
 
       return () => clearTimeout(timer)
     }
-  }, [sessionId])
+  }, [sessionId, session, status, router])
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="container flex h-[70vh] items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Loading...</CardTitle>
+            <CardDescription>Please wait while we verify your session...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-6">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-hibiscus-200 border-t-hibiscus-600" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null
+  }
 
   if (loading) {
     return (

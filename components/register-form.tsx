@@ -1,116 +1,56 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import type * as z from "zod"
+import { signIn } from "next-auth/react"
 
-import { cn } from "@/lib/utils"
-import { userRegisterSchema } from "@/lib/validations/auth"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-type FormData = z.infer<typeof userRegisterSchema>
-
 export function RegisterForm({ className, ...props }: RegisterFormProps) {
-  const router = useRouter()
-  const form = useForm<FormData>({
-    resolver: zodResolver(userRegisterSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-    },
-  })
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-
-  async function onSubmit(data: FormData) {
-    setIsLoading(true)
-
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-      }),
-    })
-
-    setIsLoading(false)
-
-    if (!response?.ok) {
-      return toast({
-        title: "Something went wrong.",
-        description: "Your registration request failed. Please try again.",
-        variant: "destructive",
-      })
-    }
-
-    toast({
-      title: "Account created!",
-      description: "You can now log in with your credentials.",
-    })
-
-    router.push("/login")
-  }
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState<boolean>(false)
 
   return (
-    <div className={cn("grid gap-6", className)} {...props}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="name@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <span className="mr-2 h-4 w-4 animate-spin" />}
-            Create Account
-          </Button>
-        </form>
-      </Form>
+    <div className="grid gap-6" {...props}>
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground mb-4">
+          Create your account using Google
+        </p>
+      </div>
+      
+      <Button
+        variant="outline"
+        type="button"
+        disabled={isGoogleLoading}
+        onClick={() => {
+          setIsGoogleLoading(true)
+          signIn("google", {
+            callbackUrl: "/dashboard",
+          })
+        }}
+        className="w-full"
+      >
+        {isGoogleLoading ? (
+          <span className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <svg
+            className="mr-2 h-4 w-4"
+            aria-hidden="true"
+            focusable="false"
+            data-prefix="fab"
+            data-icon="google"
+            role="img"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 488 512"
+          >
+            <path
+              fill="currentColor"
+              d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+            ></path>
+          </svg>
+        )}
+        Continue with Google
+      </Button>
     </div>
   )
 }

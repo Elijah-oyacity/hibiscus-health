@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { auth } from "@/lib/auth"
+import { getServerSession } from "next-auth"
 import { db } from "@/lib/db"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     console.log("[API] /api/subscription POST called")
-    const session = await auth()
+    const session = await getServerSession()
     console.log("[API] Session:", session)
 
     if (!session?.user) {
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
     console.log("[API] /api/subscription GET called")
     let session
     try {
-      session = await auth()
+      session = await getServerSession()
       console.log("[API] Session:", session)
     } catch (authError) {
       console.error("[API] Auth error:", authError)
@@ -118,7 +118,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await auth()
+    const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -139,7 +139,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const session = await auth()
+    const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

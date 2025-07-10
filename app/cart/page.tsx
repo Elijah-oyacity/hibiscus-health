@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Minus, Plus, Trash } from "lucide-react"
@@ -32,7 +34,35 @@ const initialCartItems = [
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 export default function CartPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [cartItems, setCartItems] = useState(initialCartItems)
+
+  useEffect(() => {
+    if (status === "loading") return
+    if (!session) {
+      router.push("/login")
+    }
+  }, [session, status, router])
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="container py-10">
+        <div className="flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hibiscus-600 mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null
+  }
 
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
