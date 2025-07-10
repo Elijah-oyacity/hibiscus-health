@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { db } from "@/lib/db"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-04-30.basil",
+  apiVersion: "2025-05-28.basil",
 })
 
 export async function POST(req: Request) {
@@ -18,13 +18,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { name, price, interval, description } = await req.json()
-    console.log("[API] Received body:", { name, price, interval, description })
+    const { name, price: inputPrice, interval, description } = await req.json()
+    console.log("[API] Received body:", { name, price: inputPrice, interval, description })
 
-    if (!name || !price || !interval || !description) {
-      console.warn("[API] Missing required fields", { name, price, interval, description })
+    if (!name || inputPrice === undefined || !interval || !description) {
+      console.warn("[API] Missing required fields", { name, price: inputPrice, interval, description })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
+    
+    // Ensure price is a valid number
+    const price = typeof inputPrice === 'string' ? parseFloat(inputPrice) : inputPrice;
+    if (isNaN(price)) {
+      console.warn("[API] Invalid price value:", inputPrice);
+      return NextResponse.json({ error: "Price must be a valid number" }, { status: 400 });
+    }
+    
+    // Convert to integer in cents if needed
+    const priceInCents = Math.round(price * 100) / 100 === price ? price : Math.round(price * 100);
 
     // 1. Create product in Stripe
     let product
@@ -43,7 +53,7 @@ export async function POST(req: Request) {
     let stripePrice
     try {
       stripePrice = await stripe.prices.create({
-        unit_amount: Math.round(Number(price) * 100),
+        unit_amount: Math.round(priceInCents), // Use our validated price in cents
         currency: "usd",
         recurring: { interval },
         product: product.id,
@@ -61,7 +71,7 @@ export async function POST(req: Request) {
         data: {
           name,
           description,
-          price: Math.round(Number(price) * 100),
+          price: Math.round(priceInCents), // Use our validated price in cents
           interval,
           stripePriceId: stripePrice.id,
           productId: product.id,
@@ -122,10 +132,30 @@ export async function PATCH(req: Request) {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const { id, ...data } = await req.json()
+    const { id, ...requestData } = await req.json()
     if (!id) {
       return NextResponse.json({ error: "Missing plan id" }, { status: 400 })
     }
+    
+    // Prepare data for update, ensuring price is an integer
+    const data: any = { ...requestData };
+    
+    // Validate price if it's being updated
+    if (data.price !== undefined) {
+      // Ensure price is a number
+      const priceValue = typeof data.price === 'string' 
+        ? parseInt(data.price, 10) 
+        : data.price;
+      
+      if (isNaN(priceValue)) {
+        return NextResponse.json({ 
+          error: "Price must be a valid number" 
+        }, { status: 400 });
+      }
+      
+      data.price = priceValue;
+    }
+    
     const plan = await db.subscriptionPlan.update({
       where: { id },
       data,

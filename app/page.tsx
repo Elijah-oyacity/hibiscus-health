@@ -1,44 +1,78 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Check } from "lucide-react"
+import { ArrowRight, Check, AlertCircle, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+// Define the subscription plan type based on our Prisma schema
+type SubscriptionPlan = {
+  id: string
+  name: string
+  description: string
+  price: number // Stored in cents in the database
+  interval: string
+  stripePriceId: string
+  productId: string | null
+  active: boolean
+}
 
 export default function Home() {
-  const [plans, setPlans] = useState<any[]>([])
-  const [loading, setLoading] = useState<string | null>(null)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [loading, setLoading] = useState<string | null>(null) // For subscription button loading state
+  const [plansLoading, setPlansLoading] = useState<boolean>(true) // For initial plans loading state
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/subscriptions")
-      .then((res) => res.json())
-      .then(setPlans)
+    async function fetchSubscriptionPlans() {
+      try {
+        setPlansLoading(true)
+        const response = await fetch("/api/subscription")
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch subscription plans")
+        }
+        
+        const data = await response.json()
+        setPlans(data.plans || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred")
+        console.error("Error fetching subscription plans:", err)
+      } finally {
+        setPlansLoading(false)
+      }
+    }
+    
+    fetchSubscriptionPlans()
   }, [])
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
     try {
-      const res = await fetch("/api/subscription", {
+      const res = await fetch("/api/checkout/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId }),
       })
       const data = await res.json()
-      setLoading(null)
+      
       if (data.sessionId) {
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
         await stripe?.redirectToCheckout({ sessionId: data.sessionId })
       } else {
         console.error("Subscription error response:", data)
-        alert(data.error || "Failed to start subscription.")
+        setError(data.error || "Failed to start subscription.")
       }
     } catch (err) {
-      setLoading(null)
       console.error("Network or JS error:", err)
-      alert("A network error occurred. Please try again.")
+      setError(err instanceof Error ? err.message : "A network error occurred. Please try again.")
+    } finally {
+      setLoading(null)
     }
   }
 
@@ -144,60 +178,161 @@ export default function Home() {
               </p>
             </div>
           </div>
+
+          {/* Error display */}
+          {error && (
+            <Alert variant="destructive" className="my-6 mx-auto max-w-5xl">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}. Please try refreshing the page.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-3">
-            {plans.map((plan) => (
-              <Card key={plan.id} className="flex flex-col border-hibiscus-600">
-                <CardHeader>
-                  {plan.name === "Quarterly" && (
-                    <div className="text-center text-sm font-medium text-hibiscus-600">MOST POPULAR</div>
-                  )}
-                  <CardTitle>{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="text-3xl font-bold">${plan.price}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {plan.interval === "month" && "per month"}
-                    {plan.interval === "quarter" && "per quarter ($" + (plan.price / 3).toFixed(2) + "/month)"}
-                    {plan.interval === "year" && "per year ($" + (plan.price / 12).toFixed(2) + "/month)"}
-                  </p>
-                  <ul className="mt-4 space-y-2">
-                    {plan.name === "Monthly" && (
-                      <>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>30-day supply</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Free shipping</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Cancel anytime</span></li>
-                      </>
-                    )}
-                    {plan.name === "Quarterly" && (
-                      <>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>90-day supply</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Free shipping</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>10% savings</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Cancel anytime</span></li>
-                      </>
-                    )}
-                    {plan.name === "Annual" && (
-                      <>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>365-day supply</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Free shipping</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>15% savings</span></li>
-                        <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-hibiscus-600" /><span>Free wellness consultation</span></li>
-                      </>
-                    )}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full bg-hibiscus-600 hover:bg-hibiscus-700"
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={!!loading}
-                  >
-                    {loading === plan.id ? "Redirecting..." : "Subscribe Now"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {plansLoading ? (
+              // Loading skeletons
+              [...Array(3)].map((_, i) => (
+                <Card key={i} className="flex flex-col">
+                  <CardHeader>
+                    <Skeleton className="h-8 w-32 mb-2" />
+                    <Skeleton className="h-4 w-48" />
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <Skeleton className="h-8 w-24 mb-2" />
+                    <Skeleton className="h-4 w-36 mb-6" />
+                    <div className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Skeleton className="h-10 w-full" />
+                  </CardFooter>
+                </Card>
+              ))
+            ) : plans.length === 0 ? (
+              // No plans found
+              <div className="col-span-3 text-center py-12">
+                <h3 className="text-xl font-medium">No subscription plans available</h3>
+                <p className="text-muted-foreground mt-2">Please check back later for subscription options.</p>
+              </div>
+            ) : (
+              // Display actual plans
+              plans
+                .filter(plan => plan.active)
+                .sort((a, b) => {
+                  // Sort by interval priority (month, quarter, year)
+                  const intervalPriority = { "month": 1, "quarter": 2, "year": 3 }
+                  return (intervalPriority[a.interval as keyof typeof intervalPriority] || 99) - 
+                        (intervalPriority[b.interval as keyof typeof intervalPriority] || 99)
+                })
+                .map((plan) => {
+                  // Format price from cents to dollars
+                  const priceInDollars = (plan.price / 100).toFixed(2)
+                  
+                  // Calculate monthly equivalent price
+                  let monthlyPrice: number
+                  switch (plan.interval) {
+                    case "month":
+                      monthlyPrice = plan.price
+                      break
+                    case "quarter":
+                      monthlyPrice = plan.price / 3
+                      break
+                    case "year":
+                      monthlyPrice = plan.price / 12
+                      break
+                    default:
+                      monthlyPrice = plan.price
+                  }
+                  const monthlyPriceInDollars = (monthlyPrice / 100).toFixed(2)
+
+                  // Check if this is the "most popular" plan (typically quarterly)
+                  const isPopular = plan.interval === "quarter"
+
+                  // Get benefits based on plan interval
+                  const getPlanBenefits = () => {
+                    switch (plan.interval) {
+                      case "month":
+                        return [
+                          "30-day supply",
+                          "Free shipping",
+                          "Cancel anytime"
+                        ]
+                      case "quarter":
+                        return [
+                          "90-day supply",
+                          "Free shipping",
+                          "10% savings",
+                          "Cancel anytime"
+                        ]
+                      case "year":
+                        return [
+                          "365-day supply",
+                          "Free shipping",
+                          "15% savings",
+                          "Free wellness consultation",
+                          "Cancel anytime"
+                        ]
+                      default:
+                        return [
+                          "Free shipping",
+                          "Cancel anytime"
+                        ]
+                    }
+                  }
+                  const benefits = getPlanBenefits()
+
+                  return (
+                    <Card 
+                      key={plan.id} 
+                      className={`flex flex-col ${isPopular ? "border-hibiscus-600" : ""}`}
+                    >
+                      <CardHeader>
+                        {isPopular && (
+                          <div className="text-center text-sm font-medium text-hibiscus-600">MOST POPULAR</div>
+                        )}
+                        <CardTitle>{plan.name}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <div className="text-3xl font-bold">${priceInDollars}</div>
+                        <p className="text-sm text-muted-foreground">
+                          per {plan.interval}
+                          {plan.interval !== "month" && ` ($${monthlyPriceInDollars}/month)`}
+                        </p>
+                        <ul className="mt-4 space-y-2">
+                          {benefits.map((benefit, i) => (
+                            <li key={i} className="flex items-center">
+                              <Check className="mr-2 h-4 w-4 text-hibiscus-600" />
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          className="w-full bg-hibiscus-600 hover:bg-hibiscus-700"
+                          onClick={() => handleSubscribe(plan.id)}
+                          disabled={!!loading}
+                        >
+                          {loading === plan.id ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Redirecting...
+                            </>
+                          ) : (
+                            "Subscribe Now"
+                          )}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )
+                })
+            )}
           </div>
         </div>
       </section>

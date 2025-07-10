@@ -39,15 +39,16 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(USER)
-  accounts      Account[]
-  sessions      Session[]
-  orders        Order[]
+  id              String            @id @default(cuid())
+  name            String?
+  email           String?           @unique
+  emailVerified   DateTime?
+  image           String?
+  role            Role              @default(USER)
+  accounts        Account[]
+  sessions        Session[]
+  orders          Order[]
+  subscriptions   UserSubscription[]
 }
 
 model VerificationToken {
@@ -115,16 +116,32 @@ model OrderItem {
 }
 
 model SubscriptionPlan {
-  id            String   @id @default(cuid())
-  name          String
-  description   String
-  price         Int      // Store in cents
-  interval      String   // e.g. "month", "quarter", "year"
-  stripePriceId String   @unique
-  productId     String?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String             @id @default(cuid())
+  name              String
+  description       String
+  price             Int                // Store in cents
+  interval          String             // e.g. "month", "quarter", "year"
+  stripePriceId     String             @unique
+  productId         String?
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userSubscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id                 String           @id @default(cuid())
+  userId             String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             String           // active, canceled, past_due, etc.
+  subscriptionPlanId String
+  subscriptionPlan   SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  stripeSubscriptionId String         @unique
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 }
 
 enum OrderStatus {

@@ -4,7 +4,7 @@ import Stripe from "stripe"
 import { db } from "@/lib/db"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-05-28.basil",
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test"
@@ -29,15 +29,15 @@ export async function POST(req: Request) {
       if (session.mode === "subscription") {
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
 
-        await db.subscription.create({
+        await db.userSubscription.create({
           data: {
-            userId: session.client_reference_id as string,
+            userId: subscription.metadata.userId,
             stripeSubscriptionId: subscription.id,
-            stripeCustomerId: subscription.customer as string,
             subscriptionPlanId: subscription.metadata.planId,
             status: subscription.status,
             currentPeriodStart: new Date(subscription.current_period_start * 1000),
             currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
           },
         })
       } else if (session.mode === "payment") {
@@ -66,19 +66,19 @@ export async function POST(req: Request) {
     case "invoice.payment_succeeded":
       // Update subscription status
       const invoice = event.data.object as Stripe.Invoice
-      const subscriptionId = invoice.subscription as string
+      const customerSubscriptionId = (invoice as any).subscription as string
 
-      if (subscriptionId) {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      if (customerSubscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(customerSubscriptionId)
 
-        await db.subscription.updateMany({
+        await db.userSubscription.updateMany({
           where: {
-            stripeSubscriptionId: subscriptionId,
+            stripeSubscriptionId: customerSubscriptionId,
           },
           data: {
             status: subscription.status,
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
         })
       }
@@ -88,14 +88,15 @@ export async function POST(req: Request) {
       // Update subscription details
       const updatedSubscription = event.data.object as Stripe.Subscription
 
-      await db.subscription.updateMany({
+      await db.userSubscription.updateMany({
         where: {
           stripeSubscriptionId: updatedSubscription.id,
         },
         data: {
           status: updatedSubscription.status,
-          currentPeriodStart: new Date(updatedSubscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+          currentPeriodStart: new Date((updatedSubscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((updatedSubscription as any).current_period_end * 1000),
+          cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end,
         },
       })
       break
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
       // Cancel subscription
       const deletedSubscription = event.data.object as Stripe.Subscription
 
-      await db.subscription.updateMany({
+      await db.userSubscription.updateMany({
         where: {
           stripeSubscriptionId: deletedSubscription.id,
         },

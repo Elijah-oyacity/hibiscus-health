@@ -52,10 +52,23 @@ export default function DashboardSubscriptionsPage() {
     e.preventDefault()
     setLoading(true)
     try {
+      // Convert the price from a string in dollars to an integer in cents
+      const priceInCents = Math.round(parseFloat(price) * 100);
+      
+      // Make sure price is a valid number
+      if (isNaN(priceInCents)) {
+        throw new Error("Price must be a valid number");
+      }
+      
       const res = await fetch("/api/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, price, interval, description }),
+        body: JSON.stringify({ 
+          name, 
+          price: priceInCents, // Send as integer (cents) instead of string
+          interval, 
+          description 
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to add plan")
@@ -111,10 +124,24 @@ export default function DashboardSubscriptionsPage() {
   async function handleEditSave(id: string) {
     setLoading(true)
     try {
+      // Convert the price from a string in dollars to an integer in cents
+      const priceInCents = Math.round(parseFloat(editFields.price) * 100);
+      
+      // Make sure price is a valid number
+      if (isNaN(priceInCents)) {
+        throw new Error("Price must be a valid number");
+      }
+      
       const res = await fetch("/api/subscription", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...editFields }),
+        body: JSON.stringify({ 
+          id, 
+          name: editFields.name,
+          description: editFields.description,
+          interval: editFields.interval,
+          price: priceInCents // Send as integer (cents) instead of string
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update plan")
