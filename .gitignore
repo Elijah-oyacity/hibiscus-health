@@ -185,3 +185,6 @@ aws-config.json
 # Local development
 .local/
 local/
+
+# Backup files
+README-BACKUP.md
