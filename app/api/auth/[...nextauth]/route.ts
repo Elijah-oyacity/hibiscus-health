@@ -1,50 +1,28 @@
-import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import NextAuth from "next-auth";
+import authOptions from "@/lib/auth.config";
 
-import { db } from "@/lib/db"
+// Add diagnostic logs to track auth initialization
+console.log("NextAuth route handler initializing with env:", process.env.NODE_ENV);
 
-export const authOptions = {
-  adapter: PrismaAdapter(db),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+// Next.js 13+ route handlers must export from the top level
+let handler;
+
+// Simple try-catch wrapper to handle initialization errors
+try {
+  handler = NextAuth(authOptions);
+  console.log("NextAuth handler created successfully");
+} catch (error) {
+  console.error("CRITICAL ERROR in NextAuth initialization:", error);
+  
+  // Create a fallback handler
+  handler = () => new Response(
+    JSON.stringify({ 
+      error: "Authentication service unavailable",
+      message: "The authentication service is temporarily unavailable"
     }),
-  ],
-  callbacks: {
-    async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub
-      }
-      if (token.role && session.user) {
-        session.user.role = token.role
-      }
-      return session
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.role = user.role
-      }
-      return token
-    },
-    async redirect({ url, baseUrl }) {
-      // Redirect to dashboard after successful login
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return `${baseUrl}/dashboard`
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
+    { status: 500, headers: { "Content-Type": "application/json" } }
+  );
 }
 
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
+// Export handlers for API routes
+export { handler as GET, handler as POST };

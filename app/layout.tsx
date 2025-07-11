@@ -14,6 +14,9 @@ import { SiteFooter } from "@/components/site-footer"
 
 import "@/app/globals.css"
 
+// Add environment diagnostics
+console.log(`Application starting: Environment=${process.env.NODE_ENV}, Auth Secret exists=${!!process.env.NEXTAUTH_SECRET}, Database URL exists=${!!process.env.DATABASE_URL}`);
+
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
