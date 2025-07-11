@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { apiFetch } from "@/lib/api-utils"
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler"
 
 // Fallback image
 const fallbackImage = "/placeholder.svg"
@@ -28,11 +28,13 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const { apiFetchWithErrorHandling } = useApiErrorHandler()
+
   useEffect(() => {
     async function fetchProducts() {
       try {
         setLoading(true)
-        const data = await apiFetch('/api/products', {
+        const data = await apiFetchWithErrorHandling('/api/products', {
           redirectOn403: false // Don't redirect for public products
         })
         

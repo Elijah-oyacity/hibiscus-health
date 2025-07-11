@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { apiFetch } from "@/lib/api-utils"
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler"
 
 // Define the subscription plan type based on our Prisma schema
 type SubscriptionPlan = {
@@ -37,11 +37,13 @@ export default function SubscriptionsPage() {
     }
   }, [status, router])
 
+  const { apiFetchWithErrorHandling } = useApiErrorHandler()
+
   useEffect(() => {
     async function fetchSubscriptions() {
       try {
         setLoading(true)
-        const data = await apiFetch("/api/subscription", {
+        const data = await apiFetchWithErrorHandling("/api/subscription", {
           redirectOn403: false // Don't redirect for public subscription plans
         })
         
@@ -150,7 +152,7 @@ export default function SubscriptionsPage() {
     setSubscribingPlanId(planId)
     setError(null)
     try {
-      const data = await apiFetch("/api/checkout/subscription", {
+      const data = await apiFetchWithErrorHandling("/api/checkout/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId }),
