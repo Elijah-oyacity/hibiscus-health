@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { apiFetch } from "@/lib/api-utils"
 
 // Fallback image
 const fallbackImage = "/placeholder.svg"
@@ -31,13 +32,10 @@ export default function ProductsPage() {
     async function fetchProducts() {
       try {
         setLoading(true)
-        const response = await fetch('/api/products')
+        const data = await apiFetch('/api/products', {
+          redirectOn403: false // Don't redirect for public products
+        })
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch products')
-        }
-        
-        const data = await response.json()
         setProducts(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')

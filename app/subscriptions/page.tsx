@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { apiFetch } from "@/lib/api-utils"
 
 // Define the subscription plan type based on our Prisma schema
 type SubscriptionPlan = {
@@ -40,13 +41,10 @@ export default function SubscriptionsPage() {
     async function fetchSubscriptions() {
       try {
         setLoading(true)
-        const response = await fetch("/api/subscription")
+        const data = await apiFetch("/api/subscription", {
+          redirectOn403: false // Don't redirect for public subscription plans
+        })
         
-        if (!response.ok) {
-          throw new Error("Failed to fetch subscription plans")
-        }
-        
-        const data = await response.json()
         setPlans(data.plans || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred")
@@ -152,17 +150,11 @@ export default function SubscriptionsPage() {
     setSubscribingPlanId(planId)
     setError(null)
     try {
-      const res = await fetch("/api/checkout/subscription", {
+      const data = await apiFetch("/api/checkout/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId }),
       })
-      const data = await res.json()
-      
-      if (!res.ok) {
-        console.error("Subscription checkout error:", data)
-        throw new Error(data.error || "Failed to start checkout")
-      }
       
       if (data.url) {
         // Redirect to Stripe Checkout

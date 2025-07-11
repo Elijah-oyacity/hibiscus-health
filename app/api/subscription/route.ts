@@ -94,20 +94,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     console.log("[API] /api/subscription GET called")
-    let session
-    try {
-      session = await getServerSession()
-      console.log("[API] Session:", session)
-    } catch (authError) {
-      console.error("[API] Auth error:", authError)
-      return NextResponse.json({ error: "Auth error", details: String(authError) }, { status: 500 })
-    }
-
-    if (!session?.user) {
-      console.warn("[API] Unauthorized access attempt")
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
+    
     let plans
     try {
       plans = await db.subscriptionPlan.findMany({

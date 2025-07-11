@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { apiFetch } from "@/lib/api-utils"
 
 // Define the subscription plan type based on our Prisma schema
 type SubscriptionPlan = {
@@ -32,13 +33,10 @@ export default function Home() {
     async function fetchSubscriptionPlans() {
       try {
         setPlansLoading(true)
-        const response = await fetch("/api/subscription")
+        const data = await apiFetch("/api/subscription", {
+          redirectOn403: false // Don't redirect for public subscription plans
+        })
         
-        if (!response.ok) {
-          throw new Error("Failed to fetch subscription plans")
-        }
-        
-        const data = await response.json()
         setPlans(data.plans || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred")
@@ -54,12 +52,11 @@ export default function Home() {
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
     try {
-      const res = await fetch("/api/checkout/subscription", {
+      const data = await apiFetch("/api/checkout/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId }),
       })
-      const data = await res.json()
       
       if (data.sessionId) {
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
