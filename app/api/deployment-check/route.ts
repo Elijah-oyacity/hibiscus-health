@@ -18,6 +18,11 @@ export async function GET() {
       NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET ? 'Set' : 'Missing',
       GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing',
       GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Missing',
+      // Add Amplify-specific environment variables
+      AWS_REGION: process.env.AWS_REGION || 'Not set',
+      AMPLIFY_APP_ID: process.env.AMPLIFY_APP_ID || 'Not set',
+      AMPLIFY_BRANCH: process.env.AMPLIFY_BRANCH || 'Not set',
+      AMPLIFY_DEPLOYMENT_ID: process.env.AMPLIFY_DEPLOYMENT_ID || 'Not set',
     };
 
     // Test database connection
@@ -37,6 +42,20 @@ export async function GET() {
       console.error('Database connection check failed:', error);
     }
 
+    // Get build/deployment info from Amplify environment
+    const deploymentInfo = {
+      timestamp: process.env.AMPLIFY_TIMESTAMP || 'Unknown',
+      commitId: process.env.AMPLIFY_COMMIT_ID || 'Unknown',
+      deploymentArtifacts: process.env.AMPLIFY_ARTIFACTS || 'Unknown',
+      buildId: process.env.AWS_BUILD_ID || 'Unknown',
+      deploymentUrl: process.env.AMPLIFY_URL || 'Unknown',
+      currentBranch: process.env.AMPLIFY_BRANCH || 'Unknown',
+      // Additional dev-specific info
+      isDevBranch: (process.env.AMPLIFY_BRANCH === 'dev'),
+      lastDeployAttempt: new Date().toISOString(),
+      gitHeadRef: process.env.AWS_GIT_REFERENCE || 'Unknown',
+    };
+
     const endTime = Date.now();
     
     return NextResponse.json({
@@ -49,6 +68,7 @@ export async function GET() {
         error: dbError,
         clientInitialized: !!db,
       },
+      deployment: deploymentInfo,
       serverInfo: {
         nodejs: process.version,
         memoryUsage: process.memoryUsage(),

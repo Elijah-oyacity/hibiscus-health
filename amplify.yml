@@ -6,9 +6,15 @@ frontend:
         - nvm install 18.18.0
         - nvm use 18.18.0
         - node --version
-        - npm install --legacy-peer-deps
+        - npm ci
+        - echo "Environment is $NODE_ENV"
+        # Generate Prisma client
+        - npx prisma generate
+        # Force clear cache to ensure clean build for dev branch
+        - if [ "$AWS_BRANCH" = "dev" ]; then rm -rf .next/cache || true; fi
     build:
       commands:
+        - echo "Building branch $AWS_BRANCH..."
         - npm run build
   artifacts:
     baseDirectory: .next
@@ -17,4 +23,9 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      - .next/cache/**/* 
+      # Comment out cache for dev branch to prevent stale builds
+      - .next/cache/**/*
+  # Add custom environment variables for branches
+  environmentVariables:
+    - name: NODE_ENV
+      value: production
