@@ -3,6 +3,9 @@ frontend:
   phases:
     preBuild:
       commands:
+        - nvm install 18.18.0
+        - nvm use 18.18.0
+        - node --version
         - npm install --legacy-peer-deps
     build:
       commands:
