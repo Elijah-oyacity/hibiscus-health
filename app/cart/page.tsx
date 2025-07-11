@@ -16,6 +16,7 @@ import { loadStripe } from "@stripe/stripe-js"
 const initialCartItems = [
   {
     id: "PROD001",
+    slug: "hibiscus-tablets-30-count",
     name: "Hibiscus Tablets (30 count)",
     price: 29.99,
     quantity: 1,
@@ -23,6 +24,7 @@ const initialCartItems = [
   },
   {
     id: "PROD003",
+    slug: "hibiscus-extract-2oz",
     name: "Hibiscus Extract (2oz)",
     price: 34.99,
     quantity: 1,
@@ -149,7 +151,7 @@ export default function CartPage() {
                       <div className="flex flex-1 flex-col">
                         <div className="flex justify-between text-base font-medium">
                           <h3>
-                            <Link href={`/products/${item.id}`}>{item.name}</Link>
+                            <Link href={`/products/${item.slug}`}>{item.name}</Link>
                           </h3>
                           <p className="ml-4">${(item.price * item.quantity).toFixed(2)}</p>
                         </div>

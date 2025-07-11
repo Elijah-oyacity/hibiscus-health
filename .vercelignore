@@ -1,0 +1,61 @@
+# Ignore files for Vercel deployments
+
+# Development files
+README.md
+CHANGELOG.md
+.eslintrc.json
+.eslintrc.js
+.prettier*
+.editorconfig
+.vscode/
+.idea/
+tsconfig.tsbuildinfo
+
+# Git files
+.git/
+.github/
+.gitignore
+
+# Test files
+__tests__/
+tests/
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+jest.config.js
+coverage/
+
+# Docs
+docs/
+*.md
+LICENSE
+
+# Builds and dependencies (these are handled by Vercel)
+node_modules/
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# Debug and logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Mock or example files
+*.example
+example/
+examples/
+
+# Configuration files that are not needed for production
+*.config.js
+*.config.ts
+.babelrc
+.babel*
+postcss.config.*
+tailwind.config.*
