@@ -306,7 +306,7 @@ class AmplifyAppStack(Stack):
             app_name="hibiscus-health-frontend",
             source_code_provider=GitHubSourceCodeProvider(
                 oauth_token=SecretValue.unsafe_plain_text(github_token_param.value_as_string),
-                owner="Elijah-oyacity",  # Update this to your GitHub username
+                owner="elijah-oyaxity",  # Update this to your GitHub username
                 repository="hibiscus-health",   # Update this to your repository name
             ),
             build_spec=BuildSpec.from_object_to_yaml(
