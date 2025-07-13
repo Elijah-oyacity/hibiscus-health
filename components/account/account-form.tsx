@@ -117,6 +117,7 @@ export function AccountForm({ user }: AccountFormProps) {
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="email"
