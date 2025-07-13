@@ -1,10 +1,11 @@
 import json
 import os
 import sys
-sys.path.append('/opt/python/lib/python3.9/site-packages')
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shared.dynamodb import db_client, TABLES
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(BASE_DIR, 'shared'))
+
+from dynamodb import db_client, TABLES
 
 def lambda_handler(event, context):
     try:

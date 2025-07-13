@@ -215,6 +215,15 @@ class AmplifyAppStack(Stack):
             **common_lambda_props,
         )
 
+        # Subscriptions Lambda functions
+        get_subscriptions_function = lambda_.Function(
+            self,
+            "GetSubscriptionsFunction",
+            code=lambda_.Code.from_asset("../lambda-functions/subscriptions"),
+            handler="get_subscriptions.lambda_handler",
+            **common_lambda_props,
+        )
+
         # Orders Lambda functions
         create_order_function = lambda_.Function(
             self,
@@ -247,6 +256,7 @@ class AmplifyAppStack(Stack):
             create_product_function,
             create_order_function,
             get_orders_function,
+            get_subscriptions_function,
         ]
 
         for table in tables:
@@ -273,11 +283,21 @@ class AmplifyAppStack(Stack):
         subscriptions = api.root.add_resource("subscriptions")
 
         # Add API Gateway integrations
-        products.add_method("GET", apigateway.LambdaIntegration(get_products_function))
+        products.add_method(
+            "GET",
+            apigateway.LambdaIntegration(get_products_function),
+            authorization_type=apigateway.AuthorizationType.NONE,
+        )
         products.add_method("POST", apigateway.LambdaIntegration(create_product_function))
 
         orders.add_method("GET", apigateway.LambdaIntegration(get_orders_function))
         orders.add_method("POST", apigateway.LambdaIntegration(create_order_function))
+
+        subscriptions.add_method(
+            "GET",
+            apigateway.LambdaIntegration(get_subscriptions_function),
+            authorization_type=apigateway.AuthorizationType.NONE,
+        )
 
         # Create Amplify app
         amplify_app = App(
