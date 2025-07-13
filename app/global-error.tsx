@@ -13,6 +13,12 @@ export default function GlobalError({
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Global error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error digest:', error.digest);
+    console.error('Error name:', error.name);
+    console.error('Error cause:', error.cause);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
   }, [error]);
 
   return (

@@ -13,11 +13,6 @@ const nextConfig = {
     unoptimized: true,
     domains: ['res.cloudinary.com'],
   },
-  // Exclude specific directories or files from the build
-  experimental: {
-    // Disable specific instrumentation
-    instrumentationHook: false,
-  },
   // Ignore specific files or patterns during builds
   webpack(config) {
     // Ignore specific files from being processed
