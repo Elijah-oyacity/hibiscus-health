@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
+import authOptions from "@/lib/auth.config"
 
 import { LoginForm } from "@/components/login-form"
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 export default async function LoginPage() {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (session?.user) {
     redirect("/dashboard")

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
+import authOptions from "@/lib/auth.config"
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
@@ -8,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { db } from "@/lib/db"
 
 export default async function AccountSettingsPage() {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     redirect("/login")

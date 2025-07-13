@@ -5,10 +5,11 @@ import { MainNav } from "@/components/main-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { buttonVariants } from "@/components/ui/button"
 import { getServerSession } from "next-auth"
+import authOptions from "@/lib/auth.config"
 import { UserAccountDropdown } from "./user-account-dropdown"
 
 export async function SiteHeader() {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

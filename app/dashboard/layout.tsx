@@ -1,6 +1,7 @@
 import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
+import authOptions from "@/lib/auth.config"
 import Link from "next/link"
 import { CreditCard, Home, Package, Settings, User, ShoppingBag } from "lucide-react"
 
@@ -12,7 +13,7 @@ interface DashboardLayoutProps {
 }
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     redirect("/login")

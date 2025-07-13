@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { getServerSession } from "next-auth"
+import authOptions from "@/lib/auth.config"
 import { db } from "@/lib/db"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -10,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     console.log("[API] /api/checkout/subscription POST called")
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     console.log("[API] Session:", session)
 
     if (!session?.user) {
