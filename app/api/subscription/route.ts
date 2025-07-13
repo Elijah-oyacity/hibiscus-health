@@ -2,11 +2,9 @@ import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { getServerSession } from "next-auth"
 import authOptions from "@/lib/auth.config"
-import { db } from "@/lib/db"
+import { db } from "@/lib/db-adapter"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-06-30.basil",
-})
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: Request) {
   try {
@@ -69,15 +67,13 @@ export async function POST(req: Request) {
     let plan
     try {
       plan = await db.subscriptionPlan.create({
-        data: {
-          name,
-          description,
-          price: Math.round(priceInCents), // Use our validated price in cents
-          interval,
-          stripePriceId: stripePrice.id,
-          productId: product.id,
-          active: true,
-        },
+        name,
+        description,
+        price: Math.round(priceInCents), // Use our validated price in cents
+        interval,
+        stripePriceId: stripePrice.id,
+        productId: product.id,
+        active: true,
       })
       console.log("[API] Plan saved to DB:", plan)
     } catch (dbErr) {
@@ -108,9 +104,7 @@ export async function GET(req: Request) {
     
     let plans
     try {
-      plans = await db.subscriptionPlan.findMany({
-        orderBy: { createdAt: "desc" },
-      })
+      plans = await db.subscriptionPlan.findMany()
       console.log("[API] Plans fetched:", plans)
     } catch (dbError) {
       console.error("[API] DB fetch failed:", dbError)
@@ -172,10 +166,7 @@ export async function PATCH(req: Request) {
       data.price = priceValue;
     }
     
-    const plan = await db.subscriptionPlan.update({
-      where: { id },
-      data,
-    })
+    const plan = await db.subscriptionPlan.update({ id }, data)
     return NextResponse.json({ plan })
   } catch (error) {
     console.error("[API] Error updating subscription plan:", error)
@@ -193,7 +184,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ error: "Missing plan id" }, { status: 400 })
     }
-    await db.subscriptionPlan.delete({ where: { id } })
+    await db.subscriptionPlan.delete({ id })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[API] Error deleting subscription plan:", error)

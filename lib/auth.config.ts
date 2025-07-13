@@ -6,6 +6,21 @@ import { db } from '@/lib/db';
 // Add debug logging
 const debug = process.env.NODE_ENV !== 'production';
 
+// Validate critical environment variables
+const requiredEnvVars = {
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+};
+
+// Log missing environment variables
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    console.error(`Missing required environment variable: ${key}`);
+  }
+});
+
 // Create a safer configuration that won't fail if environment variables are missing
 const authOptions: NextAuthOptions = {
   providers: [
@@ -16,6 +31,8 @@ const authOptions: NextAuthOptions = {
       allowDangerousEmailAccountLinking: true,
     }),
   ],
+  // Remove database adapter for now to use JWT-only mode
+  // adapter: PrismaAdapter(db),
   pages: {
     signIn: '/login',
     error: '/auth/error',

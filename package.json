@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
+    "@aws-sdk/client-dynamodb": "^3.844.0",
+    "@aws-sdk/lib-dynamodb": "^3.844.0",
     "@hookform/resolvers": "latest",
     "@prisma/client": "^6.11.1",
     "@prisma/extension-accelerate": "^2.0.2",
