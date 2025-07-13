@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { getServerSession } from "next-auth"
 import authOptions from "@/lib/auth.config"
-import { db } from "../../../lib/db-adapter" // updated
+import { db } from "@/lib/db-adapter"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
