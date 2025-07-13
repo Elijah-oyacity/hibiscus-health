@@ -12,6 +12,35 @@ frontend:
         - npx prisma generate
         # Force clear cache to ensure clean build for dev branch
         - if [ "$AWS_BRANCH" = "dev" ]; then rm -rf .next/cache || true; fi
+        # Set up environment variables from Amplify
+        - echo "Setting up environment variables..."
+        - echo "NODE_ENV=$NODE_ENV"
+        - echo "AWS_REGION=$AWS_REGION"
+        - echo "AMPLIFY_APP_ID=$AMPLIFY_APP_ID"
+        - echo "AMPLIFY_BRANCH=$AMPLIFY_BRANCH"
+        - echo "AMPLIFY_DEPLOYMENT_ID=$AMPLIFY_DEPLOYMENT_ID"
+        # Create .env file for build
+        - |
+          cat > .env << EOF
+          NODE_ENV=$NODE_ENV
+          AWS_REGION=$AWS_REGION
+          AMPLIFY_APP_ID=$AMPLIFY_APP_ID
+          AMPLIFY_BRANCH=$AMPLIFY_BRANCH
+          AMPLIFY_DEPLOYMENT_ID=$AMPLIFY_DEPLOYMENT_ID
+          # Database configuration
+          USE_DYNAMODB=true
+          DATABASE_URL=postgresql://placeholder
+          DIRECT_URL=postgresql://placeholder
+          # Auth configuration
+          NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+          NEXTAUTH_URL=https://$AMPLIFY_APP_ID.amplifyapp.com
+          GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+          GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+          # Stripe configuration
+          STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+          STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+          EOF
     build:
       commands:
         - echo "Building branch $AWS_BRANCH..."
@@ -23,9 +52,10 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      # Comment out cache for dev branch to prevent stale builds
       - .next/cache/**/*
-  # Add custom environment variables for branches
+  # Environment variables will be set in Amplify Console
   environmentVariables:
     - name: NODE_ENV
       value: production
+    - name: USE_DYNAMODB
+      value: "true"
