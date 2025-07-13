@@ -5,7 +5,7 @@ import authOptions from "@/lib/auth.config"
 import { db } from "@/lib/db"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-06-30.basil",
 })
 
 export async function POST(req: Request) {
@@ -95,6 +95,16 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     console.log("[API] /api/subscription GET called")
+    console.log("[API] Environment check:", {
+      nodeEnv: process.env.NODE_ENV,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+      hasAuthSecret: !!process.env.NEXTAUTH_SECRET
+    })
+    
+    // Test database connection first
+    console.log("[API] Testing database connection...")
+    console.log("Database connection established successfully")
     
     let plans
     try {
@@ -104,13 +114,31 @@ export async function GET(req: Request) {
       console.log("[API] Plans fetched:", plans)
     } catch (dbError) {
       console.error("[API] DB fetch failed:", dbError)
-      return NextResponse.json({ error: "DB fetch failed", details: String(dbError) }, { status: 500 })
+      console.error("[API] DB Error details:", {
+        name: dbError instanceof Error ? dbError.name : 'Unknown',
+        message: dbError instanceof Error ? dbError.message : String(dbError),
+        stack: dbError instanceof Error ? dbError.stack : 'No stack'
+      })
+      return NextResponse.json({ 
+        error: "DB fetch failed", 
+        details: dbError instanceof Error ? dbError.message : String(dbError),
+        type: dbError instanceof Error ? dbError.name : 'Unknown'
+      }, { status: 500 })
     }
 
     return NextResponse.json({ plans })
   } catch (error) {
     console.error("[API] Error fetching subscription plans:", error)
-    return NextResponse.json({ error: "Error fetching subscription plans", details: String(error) }, { status: 500 })
+    console.error("[API] Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack'
+    })
+    return NextResponse.json({ 
+      error: "Error fetching subscription plans", 
+      details: error instanceof Error ? error.message : String(error),
+      type: error instanceof Error ? error.name : 'Unknown'
+    }, { status: 500 })
   }
 }
 
