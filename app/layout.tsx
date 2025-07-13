@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { AuthProvider } from "@/components/auth-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import authOptions from "@/lib/auth.config"
 
 import "@/app/globals.css"
 
@@ -35,7 +36,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
